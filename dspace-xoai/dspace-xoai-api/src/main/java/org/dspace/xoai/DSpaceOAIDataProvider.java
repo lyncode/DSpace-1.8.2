@@ -52,27 +52,27 @@ public class DSpaceOAIDataProvider extends HttpServlet
         try
         {
             XOAIManager.initialize(ConfigurationManager
-                    .getProperty("dspace.dir") + "/config/modules/xoai");
+                    .getProperty("xoai", "config.dir"));
             if (!"database".equals(ConfigurationManager.getProperty("xoai", "storage"))) {
                 DSpaceSolrServer.getServer();
             }
-            System.out.println("[OAI 2.0] Initialized");
+            System.out.println("[XOAI 2.0] Initialized");
         }
         catch (com.lyncode.xoai.dataprovider.exceptions.ConfigurationException e)
         {
-            System.out.println("Unable to configure XOAI (OAI 2.0 Core)");
+            System.out.println("Unable to configure XOAI (XOAI 2.0 Core)");
             e.printStackTrace();
         }
         catch (SolrServerException e)
         {
-            System.out.println("Unable to configure XOAI (OAI 2.0 Core)");
+            System.out.println("Unable to configure XOAI (XOAI 2.0 Core)");
             e.printStackTrace();
         }
     }
 
     public void destroy()
     {
-        System.out.println("[OAI 2.0] Destroyed");
+        System.out.println("[XOAI 2.0] Destroyed");
     }
 
     @Override
@@ -84,7 +84,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
 
         try
         {
-            log.debug("OAI 2.0 request received");
+            log.debug("XOAI 2.0 request received");
             context = new Context();
 
             // Filters require database connection -> dependency injection?
@@ -95,7 +95,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
 
             DSpaceItemRepository repository;
             String storage = ConfigurationManager
-                    .getProperty("oai", "storage");
+                    .getProperty("xoai", "storage");
             if (storage == null
                     || !storage.trim().toLowerCase().equals("database"))
             {
@@ -108,7 +108,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
                 repository = new DSpaceItemDatabaseRepository(context);
             }
 
-            log.debug("Creating OAI Data Provider Instance");
+            log.debug("Creating XOAI Data Provider Instance");
             OAIDataProvider dataProvider = new OAIDataProvider(request
                     .getPathInfo().replace("/", ""), new DSpaceIdentify(
                     context, request), new DSpaceSetRepository(context),
@@ -136,7 +136,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
                     + parameters.getResumptionToken() + parameters.getSet()
                     + parameters.getFrom() + parameters.getUntil();
 
-            log.debug("Handling OAI request");
+            log.debug("Handling XOAI request");
             XOAICacheManager.handle(identification, dataProvider, parameters, out);
             
             out.flush();
@@ -156,7 +156,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
             if (context != null)
                 context.abort();
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                    "Requested OAI context \""
+                    "Requested XOAI context \""
                     + request.getPathInfo().replace("/", "")
                     + "\" does not exist");
         }
