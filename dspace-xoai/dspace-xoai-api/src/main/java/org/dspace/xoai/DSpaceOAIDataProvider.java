@@ -65,7 +65,10 @@ public class DSpaceOAIDataProvider extends HttpServlet
         }
         catch (SolrServerException e)
         {
-            System.out.println("Unable to configure XOAI (XOAI 2.0 Core)");
+            System.out.println("Unable to connect to Solr Server");
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Unable to initialize XOAI.");
             e.printStackTrace();
         }
     }
@@ -88,6 +91,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
             context = new Context();
 
             // Filters require database connection -> dependency injection?
+            
             for (AbstractFilter filter : XOAIManager.getManager()
                     .getFilterManager().getFilters())
                 if (filter instanceof DSpaceFilter)
