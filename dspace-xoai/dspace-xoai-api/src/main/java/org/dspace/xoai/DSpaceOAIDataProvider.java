@@ -91,6 +91,9 @@ public class DSpaceOAIDataProvider extends HttpServlet
             context = new Context();
 
             // Filters require database connection -> dependency injection?
+            if (XOAIManager.getManager() == null)
+            	throw new ServletException("XOAI wasn't correctly initialized, please check the log for previous errors");
+            
             
             for (AbstractFilter filter : XOAIManager.getManager()
                     .getFilterManager().getFilters())
