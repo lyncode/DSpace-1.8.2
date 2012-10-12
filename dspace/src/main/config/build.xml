@@ -730,8 +730,6 @@ Common usage:
 
     	<mkdir dir="${dspace.dir}/solr" />
 
-    	<mkdir dir="${dspace.dir}/var" />
-
     </target>
 
 

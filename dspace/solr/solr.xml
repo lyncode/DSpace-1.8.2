@@ -31,7 +31,6 @@
   <cores adminPath="/admin/cores">
     <core name="search" instanceDir="search" />
     <core name="statistics" instanceDir="statistics" />
-    <core name="xoai" instanceDir="xoai" />
   </cores>
   
 </solr>
