@@ -10,6 +10,11 @@ package org.dspace.xoai;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -38,7 +43,7 @@ import com.lyncode.xoai.dataprovider.filter.AbstractFilter;
 
 /**
  * 
- * @author Lyncode Development Team <dspace@lyncode.com>
+ * @author João Melo <jmelo@lyncode.com>
  */
 @SuppressWarnings("serial")
 public class DSpaceOAIDataProvider extends HttpServlet
@@ -52,11 +57,11 @@ public class DSpaceOAIDataProvider extends HttpServlet
         try
         {
             XOAIManager.initialize(ConfigurationManager
-                    .getProperty("xoai", "config.dir"));
-            if (!"database".equals(ConfigurationManager.getProperty("xoai", "storage"))) {
+                    .getProperty("oai", "config.dir"));
+            if (!"database".equals(ConfigurationManager.getProperty("oai", "storage"))) {
                 DSpaceSolrServer.getServer();
             }
-            System.out.println("[XOAI 2.0] Initialized");
+            System.out.println("[OAI 2.0] Initialized");
         }
         catch (com.lyncode.xoai.dataprovider.exceptions.ConfigurationException e)
         {
@@ -75,7 +80,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
 
     public void destroy()
     {
-        System.out.println("[XOAI 2.0] Destroyed");
+        System.out.println("[OAI 2.0] Destroyed");
     }
 
     @Override
@@ -87,14 +92,13 @@ public class DSpaceOAIDataProvider extends HttpServlet
 
         try
         {
-            log.debug("XOAI 2.0 request received");
+            log.debug("OAI 2.0 request received");
             context = new Context();
 
-            // Filters require database connection -> dependency injection?
             if (XOAIManager.getManager() == null)
-            	throw new ServletException("XOAI wasn't correctly initialized, please check the log for previous errors");
+            	throw new ServletException("OAI 2.0 wasn't correctly initialized, please check the log for previous errors");
             
-            
+            // Filters require database connection -> dependency injection?
             for (AbstractFilter filter : XOAIManager.getManager()
                     .getFilterManager().getFilters())
                 if (filter instanceof DSpaceFilter)
@@ -102,7 +106,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
 
             DSpaceItemRepository repository;
             String storage = ConfigurationManager
-                    .getProperty("xoai", "storage");
+                    .getProperty("oai", "storage");
             if (storage == null
                     || !storage.trim().toLowerCase().equals("database"))
             {
@@ -115,7 +119,7 @@ public class DSpaceOAIDataProvider extends HttpServlet
                 repository = new DSpaceItemDatabaseRepository(context);
             }
 
-            log.debug("Creating XOAI Data Provider Instance");
+            log.debug("Creating OAI Data Provider Instance");
             OAIDataProvider dataProvider = new OAIDataProvider(request
                     .getPathInfo().replace("/", ""), new DSpaceIdentify(
                     context, request), new DSpaceSetRepository(context),
@@ -124,26 +128,14 @@ public class DSpaceOAIDataProvider extends HttpServlet
             log.debug("Reading parameters from request");
 
             OutputStream out = response.getOutputStream();
-            OAIRequestParameters parameters = new OAIRequestParameters();
-            parameters.setFrom(request.getParameter("from"));
-            parameters.setUntil(request.getParameter("until"));
-            parameters.setSet(request.getParameter("set"));
-            parameters.setVerb(request.getParameter("verb"));
-            parameters
-                    .setMetadataPrefix(request.getParameter("metadataPrefix"));
-            parameters.setIdentifier(request.getParameter("identifier"));
-            parameters.setResumptionToken(request
-                    .getParameter("resumptionToken"));
+            OAIRequestParameters parameters = new OAIRequestParameters(buildParametersMap(request));
 
             response.setContentType("application/xml");
 
             String identification = request.getPathInfo().replace("/", "")
-                    + parameters.getVerb() + parameters.getMetadataPrefix()
-                    + parameters.getIdentifier()
-                    + parameters.getResumptionToken() + parameters.getSet()
-                    + parameters.getFrom() + parameters.getUntil();
+                    + parameters.requestID();
 
-            log.debug("Handling XOAI request");
+            log.debug("Handling OAI request");
             XOAICacheManager.handle(identification, dataProvider, parameters, out);
             
             out.flush();
@@ -163,14 +155,27 @@ public class DSpaceOAIDataProvider extends HttpServlet
             if (context != null)
                 context.abort();
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                    "Requested XOAI context \""
+                    "Requested OAI context \""
                     + request.getPathInfo().replace("/", "")
                     + "\" does not exist");
         }
 
     }
 
-    @Override
+    @SuppressWarnings("rawtypes")
+	private Map<String, List<String>> buildParametersMap(
+			HttpServletRequest request) {
+		Map<String, List<String>> map = new HashMap<String, List<String>>();
+		Enumeration names = request.getParameterNames();
+		while (names.hasMoreElements()) {
+			String name = (String) names.nextElement();
+			String[] values = request.getParameterValues(name);
+			map.put(name, Arrays.asList(values));
+		}
+		return map;
+	}
+
+	@Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException
     {
