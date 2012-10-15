@@ -729,6 +729,8 @@ Common usage:
         <mkdir dir="${report.dir}" />
 
     	<mkdir dir="${dspace.dir}/solr" />
+		
+		<mkdir dir="${dspace.dir}/var" />
 
     </target>
 
